@@ -84,6 +84,7 @@ public:
 		removeChildComponent(tmp);
 		currentSpectrum->prepareToRender(sampleRate, fftSize);
 		addAndMakeVisible(currentSpectrum);
+		repaint();
 	}
 	/*Listeners*/
 	void buttonClicked(Button* button) override
@@ -91,7 +92,11 @@ public:
 		if (button == &switchModeButton)
 			switchMode();
 		else if (button == &pauseButton)
+		{
 			paused = pauseButton.getToggleState();
+			if (currentSpectrum == &tfSpectrum)
+				tfSpectrum.pause();
+		}
 	}
 
 	void sliderValueChanged(Slider* slider) override

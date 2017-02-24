@@ -19,7 +19,7 @@ class TimeFreqSpectrum : public Spectrum
 {
 public:
 	TimeFreqSpectrum()
-		: spectogramImage(Image::PixelFormat::ARGB, 1024, 512, true),
+		: spectogramImage(Image::PixelFormat::ARGB, 16, 512, true),
 		  oYScale(std::log10(20), std::log10(20000))
 	{
 		mode = "Hz(t)";
@@ -33,8 +33,13 @@ public:
 	void changeSpeed(float speed)
 	{
 		int width = jmap(speed, static_cast<float>(16), static_cast<float>(1024));
-		spectogramImage = spectogramImage.rescaled(width, 1024, Graphics::ResamplingQuality::lowResamplingQuality);
+		spectogramImage = spectogramImage.rescaled(width, 512, Graphics::ResamplingQuality::lowResamplingQuality);
 		repaint();
+	}
+
+	void pause()
+	{
+		spectogramImage = spectogramImage.rescaled(1024, 512, Graphics::ResamplingQuality::lowResamplingQuality);
 	}
 
 	void paint(Graphics& g) override
@@ -63,9 +68,10 @@ public:
 		freqLine.setEnd(0, 0);
 		timeLine.setEnd(localBounds.getWidth(), localBounds.getHeight());
 
-		for (int i = 0; i < 10; i++)
+		oYPoints[0].setXY(0, getHeight() - 20);
+		for (int i = 1; i < 10; i++)
 			oYPoints[i].setXY(0, localBounds.getHeight() - jmap(std::log10(freqScales[i]),
-				oYScale.getStart(), oYScale.getEnd(), static_cast<double>(20), static_cast<double>(freqLine.getLength())));
+				oYScale.getStart(), oYScale.getEnd(), static_cast<double>(0), static_cast<double>(freqLine.getLength())));
 
 
 	}
@@ -89,7 +95,7 @@ public:
 					minMax.getEnd(), 0.0f, 255.0f);
 
 				const int yPosition = imageHeight
-					- jmap(static_cast<double>(std::log10(bandDiff * i + 1)),
+					- jmap(static_cast<double>(std::log10(bandDiff * (i + 1))),
 						oYScale.getStart(), oYScale.getEnd(), static_cast<double>(0), static_cast<const double>(imageHeight));
 
 				for (int j = downLinePosition; j > yPosition; j--)

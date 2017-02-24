@@ -2,9 +2,11 @@
 
 <JUCERPROJECT id="w5a627" name="SMEQ" projectType="guiapp" version="1.0.0"
               bundleIdentifier="com.yourcompany.SMEQ" includeBinaryInAppConfig="1"
-              jucerVersion="4.3.1">
+              jucerVersion="4.3.1" companyEmail="blinkop@gmail.com" companyName="Blinkop Records"
+              userNotes="This analyzer was created to work with closed time parts of audio signal and general proposes">
   <MAINGROUP id="FjdJaX" name="SMEQ">
     <GROUP id="{B52498EB-477E-AB8A-3FD1-1FDC530DE2E1}" name="Source">
+      <FILE id="KX2y5y" name="logo.png" compile="0" resource="1" file="Source/logo.png"/>
       <FILE id="eS8Qxr" name="FreqDBSpectrum.h" compile="0" resource="0"
             file="Source/FreqDBSpectrum.h"/>
       <FILE id="TkbLyz" name="TimeFreqSpectrum.h" compile="0" resource="0"
@@ -18,7 +20,8 @@
     </GROUP>
   </MAINGROUP>
   <EXPORTFORMATS>
-    <VS2015 targetFolder="Builds/VisualStudio2015" IPPLibrary="Parallel_Static">
+    <VS2015 targetFolder="Builds/VisualStudio2015" IPPLibrary="Parallel_Static"
+            smallIcon="KX2y5y" bigIcon="KX2y5y">
       <CONFIGURATIONS>
         <CONFIGURATION name="Debug" winWarningLevel="4" generateManifest="1" winArchitecture="32-bit"
                        isDebug="1" optimisation="1" targetName="SMEQ"/>
