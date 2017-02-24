@@ -79,7 +79,7 @@ public:
 				oXScale.getEnd(), static_cast<double>(0), static_cast<double>(localBounds.getWidth())));
 	}
 
-	void renderNextFrame(float* fftData)
+	void renderNextFrame(float* fftData, const float maxLevel)
 	{
 		Range<float> minMax = FloatVectorOperations::findMinAndMax(fftData, fftSize);
 
@@ -87,9 +87,10 @@ public:
 		{
 			const int fftIndex = jmap(static_cast<int>(bandDiff * (i + 1)), 0, static_cast<int>(sampleRate / 2), 0, fftSize - 1);
 			const float level = jmap(fftData[fftIndex], minMax.getStart(),
-				minMax.getEnd(), 0.0f, static_cast<float>(getLocalBounds().getHeight() - 30));
+				minMax.getEnd(), 0.0f, maxLevel);
+			const int yScale = jmap(level, 0.0f, 1.0f, 0.0f, static_cast<float>(getLocalBounds().getHeight() - 30));
 
-			peaks[i].setY(getLocalBounds().getHeight() - 10 - level);
+			peaks[i].setY(getLocalBounds().getHeight() - 10 - yScale);
 		}
 
 		repaint();

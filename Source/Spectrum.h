@@ -25,7 +25,7 @@ public:
 	void paint(Graphics& g) override {}
 	void resized() override {}
 
-	virtual void renderNextFrame(float* fftData) = 0;
+	virtual void renderNextFrame(float* fftData, const float maxLevel) = 0;
 	virtual void prepareToRender(double sampleRate, int dataSize) = 0;
 	String getMode() const { return mode; }
 protected:

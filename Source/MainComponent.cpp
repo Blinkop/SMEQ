@@ -26,7 +26,8 @@
 */
 class MainContentComponent   : public AudioAppComponent,
 							   private Timer,
-							   private Button::Listener
+							   private Button::Listener,
+							   private Slider::Listener
 {
 public:
     //==============================================================================
@@ -37,12 +38,14 @@ public:
 		  paused(false),
 		  switchModeButton("Switch mode", 0.25f, Colours::greenyellow),
 		  pauseButton("Pause"),
-		  speedSlider(Slider::SliderStyle::LinearHorizontal, Slider::TextEntryBoxPosition::TextBoxBelow)
+		  speedSlider(Slider::SliderStyle::LinearHorizontal, Slider::TextEntryBoxPosition::TextBoxBelow),
+		  threshold(0.001f)
     {
 		setSize(800, 600);
-		speedSlider.setMinAndMaxValues(0, 1);
+		speedSlider.setRange(0, 1);
 		switchModeButton.addListener(this);
 		pauseButton.addListener(this);
+		speedSlider.addListener(this);
 
 		currentSpectrum = &spectrum;
 		addAndMakeVisible(currentSpectrum);
@@ -52,6 +55,7 @@ public:
 		speedSlider.setAlwaysOnTop(true);
 		switchModeButton.setAlwaysOnTop(true);
 		pauseButton.setAlwaysOnTop(true);
+		speedSlider.setEnabled(false);
 
         setAudioChannels (2, 0);
 		startTimerHz(60);
@@ -66,22 +70,36 @@ public:
 	{
 		Component* tmp = currentSpectrum;
 		if (currentSpectrum == &spectrum)
+		{
 			currentSpectrum = &tfSpectrum;
+			speedSlider.setEnabled(true);
+		}
 		else
+		{
 			currentSpectrum = &spectrum;
+			speedSlider.setEnabled(false);
+		}
 
 		tmp->setVisible(false);
 		removeChildComponent(tmp);
 		currentSpectrum->prepareToRender(sampleRate, fftSize);
 		addAndMakeVisible(currentSpectrum);
 	}
-
+	/*Listeners*/
 	void buttonClicked(Button* button) override
 	{
 		if (button == &switchModeButton)
 			switchMode();
 		else if (button == &pauseButton)
 			paused = pauseButton.getToggleState();
+	}
+
+	void sliderValueChanged(Slider* slider) override
+	{
+		if (slider == &speedSlider)
+		{
+			tfSpectrum.changeSpeed(speedSlider.getValue());
+		}
 	}
 
 	void timerCallback() override
@@ -162,13 +180,20 @@ public:
 		switchModeButton.setBounds(localBounds.getWidth() - localBounds.getWidth() / 10,
 			20, localBounds.getWidth() / 20, localBounds.getHeight() / 40);
 		pauseButton.setBounds(switchModeButton.getBounds().withX(switchModeButton.getX() - switchModeButton.getWidth() * 2));
-		speedSlider.setBounds(pauseButton.getBounds().withX(pauseButton.getX() - pauseButton.getWidth));
+		speedSlider.setBounds(pauseButton.getBounds().withX
+			(pauseButton.getX() - pauseButton.getWidth() * 3).withWidth(pauseButton.getWidth() * 3));
     }
 
 	void updateSpectrogram()
 	{
+		Range<float> minMax = FloatVectorOperations::findMinAndMax(fftData, fftSize);
+
+		float maxLevel = 0;
+		if (minMax.getEnd() >= threshold)
+			maxLevel = minMax.getEnd();
+
 		forwardFFT.performFrequencyForwardTransform(fftData);
-		currentSpectrum->renderNextFrame(fftData);
+		currentSpectrum->renderNextFrame(fftData, maxLevel);
 	}
 
 
@@ -197,6 +222,7 @@ private:
 
 	double sampleRate;
 	int bufferLength;
+	const float threshold;
 
 	CriticalSection writerLock;
 

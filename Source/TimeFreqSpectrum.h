@@ -19,7 +19,7 @@ class TimeFreqSpectrum : public Spectrum
 {
 public:
 	TimeFreqSpectrum()
-		: spectogramImage(Image::PixelFormat::ARGB, 128, 1024, true),
+		: spectogramImage(Image::PixelFormat::ARGB, 1024, 512, true),
 		  oYScale(std::log10(20), std::log10(20000))
 	{
 		mode = "Hz(t)";
@@ -28,6 +28,13 @@ public:
 	~TimeFreqSpectrum()
 	{
 
+	}
+
+	void changeSpeed(float speed)
+	{
+		int width = jmap(speed, static_cast<float>(16), static_cast<float>(1024));
+		spectogramImage = spectogramImage.rescaled(width, 1024, Graphics::ResamplingQuality::lowResamplingQuality);
+		repaint();
 	}
 
 	void paint(Graphics& g) override
@@ -39,9 +46,10 @@ public:
 		g.drawArrow(freqLine, 1.0f, 5, 10);
 		g.drawArrow(timeLine, 1.0f, 5, 10);
 
+		g.setColour(Colours::white);
 		for (int i = 0; i < 10; i++)
 		{
-			g.drawHorizontalLine(oYPoints[i].getY(), oYPoints[i].getX(), oYPoints[i].getX() + 3);
+			g.drawHorizontalLine(oYPoints[i].getY(), oYPoints[i].getX(), getWidth());
 			g.drawText(String(freqScales[i]), oYPoints[i].getX() + 2, oYPoints[i].getY() + 5, 40, 10, Justification::centred);
 		}
 	}
@@ -62,26 +70,37 @@ public:
 
 	}
 
-	void renderNextFrame(float* fftData)
+	void renderNextFrame(float* fftData, const float maxLevel)
 	{
 		Range<float> minMax = FloatVectorOperations::findMinAndMax(fftData, fftSize);
 
 		const int rightEdge = spectogramImage.getWidth() - 1;
 		const int imageHeight = spectogramImage.getHeight();
+		int downLinePosition = imageHeight;
 
 		spectogramImage.moveImageSection(0, 0, 1, 0, rightEdge, imageHeight);
 
-		for (int i = 0; i < fftSize; i++)
+		if (maxLevel)
 		{
-			const int fftIndex = jmap(static_cast<int>(bandDiff * (i + 1)), 0, static_cast<int>(sampleRate / 2), 0, fftSize - 1);
-			const int level = jmap(fftData[fftIndex], minMax.getStart(),
-				minMax.getEnd(), 0.0f, 255.0f);
+			for (int i = 0; i < fftSize; i++)
+			{
+				const int fftIndex = jmap(static_cast<int>(bandDiff * (i + 1)), 0, static_cast<int>(sampleRate / 2), 0, fftSize - 1);
+				const int level = jmap(fftData[fftIndex], minMax.getStart(),
+					minMax.getEnd(), 0.0f, 255.0f);
 
-			const int yPosition = imageHeight
-				- jmap(static_cast<double>(std::log10(bandDiff * i + 1)),
-					oYScale.getStart(), oYScale.getEnd(), static_cast<double>(0), static_cast<const double>(imageHeight));
+				const int yPosition = imageHeight
+					- jmap(static_cast<double>(std::log10(bandDiff * i + 1)),
+						oYScale.getStart(), oYScale.getEnd(), static_cast<double>(0), static_cast<const double>(imageHeight));
 
-			spectogramImage.setPixelAt(rightEdge, yPosition, Colour::fromRGBA(0, 0, 0, level));
+				for (int j = downLinePosition; j > yPosition; j--)
+					spectogramImage.setPixelAt(rightEdge, j, Colour::fromRGBA(0, 0, 0, level));
+				downLinePosition = yPosition;
+			}
+		}
+		else
+		{
+			for (int i = 0; i < imageHeight; i++)
+				spectogramImage.setPixelAt(rightEdge, i, Colour::fromRGBA(0, 0, 0, 0));
 		}
 
 		repaint();
