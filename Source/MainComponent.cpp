@@ -14,6 +14,7 @@
 #include "IntelFFT.h"
 #include "FreqDBSpectrum.h"
 #include "TimeFreqSpectrum.h"
+#include "SampleRecognizer.h"
 
 #ifdef JUCE_MSVC
 //#pragma warning(disable: 4244)
@@ -31,7 +32,7 @@ class MainContentComponent   : public AudioAppComponent,
 {
 public:
     //==============================================================================
-    MainContentComponent()
+	MainContentComponent()
 		: forwardFFT(fftSize, false),
 		  currentDataPosition(0),
 		  nextBlockReady(false),
@@ -39,7 +40,8 @@ public:
 		  switchModeButton("Switch mode", 0.25f, Colours::greenyellow),
 		  pauseButton("Pause"),
 		  speedSlider(Slider::SliderStyle::LinearHorizontal, Slider::TextEntryBoxPosition::TextBoxBelow),
-		  threshold(0.001f)
+		  threshold(0.1f),
+		  recognizer(SampleRecognizer::getRecognizer())
     {
 		setSize(800, 600);
 		speedSlider.setRange(0, 1);
@@ -57,6 +59,8 @@ public:
 		pauseButton.setAlwaysOnTop(true);
 		speedSlider.setEnabled(false);
 
+		sampleType = SampleRecognizer::sampleType::NO_TYPE;
+		lastType = SampleRecognizer::sampleType::NO_TYPE;
         setAudioChannels (2, 0);
 		startTimerHz(60);
     }
@@ -122,6 +126,7 @@ public:
 		this->sampleRate = sampleRate;
 		this->bufferLength = samplesPerBlockExpected;
 		currentSpectrum->prepareToRender(sampleRate, fftSize);
+		recognizer.reloadIndexes(sampleRate, fftSize);
 
 		zeromem(fftData, bufferLength);
     }
@@ -172,6 +177,7 @@ public:
         g.fillAll (Colours::darkgoldenrod);
 
 		g.drawText(currentSpectrum->getMode(), switchModeButton.getBounds().withY(0), Justification::centred);
+		g.drawText(types[lastType], 0, 0, 50, 20, Justification::centred);
     }
 
     void resized() override
@@ -193,12 +199,19 @@ public:
 	{
 		Range<float> minMax = FloatVectorOperations::findMinAndMax(fftData, fftSize);
 
-		float maxLevel = 0;
+		float maxLevel = 0.0f;
 		if (minMax.getEnd() >= threshold)
 			maxLevel = minMax.getEnd();
 
 		forwardFFT.performFrequencyForwardTransform(fftData);
 		currentSpectrum->renderNextFrame(fftData, maxLevel);
+		//recognizer.performMainHarmonyDetection(fftData, fftSize, maxLevel != 0);
+		recognizer.performTripleHarmonyDetection(fftData, fftSize, maxLevel != 0);
+		sampleType = recognizer.getType();
+		if (sampleType != SampleRecognizer::sampleType::NO_TYPE)
+			lastType = sampleType;
+		
+		repaint();
 	}
 
 
@@ -212,12 +225,17 @@ private:
 	ArrowButton switchModeButton;
 	ToggleButton pauseButton;
 
+	String types[4] = { "Unknown", "Kick", "Snare", "Hat" };
+	
 	FreqDBSpectrum spectrum;
 	TimeFreqSpectrum tfSpectrum;
 	Spectrum* currentSpectrum;
 	Slider speedSlider;
 
 	IntelFFT forwardFFT;
+	SampleRecognizer& recognizer;
+	SampleRecognizer::sampleType sampleType;
+	SampleRecognizer::sampleType lastType;
 
 	float fftData[fftSize];
 	float inputData[fftSize];
