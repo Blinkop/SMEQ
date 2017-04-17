@@ -46,7 +46,20 @@ void SampleRecognizer::performMainHarmonyDetection(float * data, int size, bool 
 					}
 			}
 			else
+			{
 				currentSampleType = sampleType::HAT;
+
+				if (melTotalInfo[1] == 0)
+				{
+					currentSampleType = sampleType::KICK;
+					for (int i = 2; i < numFrames; i++)
+						if (melTotalInfo[i] == 1)
+						{
+							currentSampleType = sampleType::SNARE;
+							break;
+						}
+				}
+			}
 		}
 		else
 		{
@@ -56,10 +69,10 @@ void SampleRecognizer::performMainHarmonyDetection(float * data, int size, bool 
 		if (currentSampleType != sampleType::NO_TYPE)
 		{
 			lastSampleType = currentSampleType;
-			logString.append("detected: sampleType: " + String(lastSampleType) + "; with melInfo: ", 256);
+			/*logString.append("detected: sampleType: " + String(lastSampleType) + "; with melInfo: ", 256);
 			for (int i = 0; i < numFrames; i++)
 				logString.append(String(melTotalInfo[i]) + " ", 256);
-			logString.append("\n", 256);
+			logString.append("\n", 256);*/
 		}
 
 		resetInfo();
@@ -94,7 +107,7 @@ void SampleRecognizer::performTripleHarmonyDetection(float * data, int size, boo
 				currentSampleType = sampleType::KICK;
 				for (int i = 1; i < numFrames; i++)
 				{
-					if (getFrameSumAt(i) >= 5)
+					if (getFrameSumAt(i) >= thirdHarmony + secondHarmony)
 					{
 						currentSampleType = sampleType::SNARE;
 						break;
@@ -105,7 +118,7 @@ void SampleRecognizer::performTripleHarmonyDetection(float * data, int size, boo
 			{
 				currentSampleType = sampleType::HAT;
 
-				if (getFrameSumAt(1) < 5)
+				if (getFrameSumAt(1) < thirdHarmony + secondHarmony)
 				{
 					currentSampleType = sampleType::KICK;
 					for (int i = 2; i < numFrames; i++)
@@ -126,14 +139,14 @@ void SampleRecognizer::performTripleHarmonyDetection(float * data, int size, boo
 		if (currentSampleType != sampleType::NO_TYPE)
 		{
 			lastSampleType = currentSampleType;
-			logString.append("detected: sampleType: " + String(lastSampleType) + "; with melInfo: ", 256);
+			/*logString.append("detected: sampleType: " + String(lastSampleType) + "; with melInfo: ", 256);
 			for (int i = 0; i < numFrames; i++)
 			{
 				for (int j = 0; j < numHarmonies; j++)
 					logString.append(String(_melTotalInfo[i][j]) + " ", 256);
 				logString.append(" | ", 256);
 			}
-			logString.append("\n", 256);
+			logString.append("\n", 256);*/
 		}
 
 		_resetInfo();
@@ -142,5 +155,7 @@ void SampleRecognizer::performTripleHarmonyDetection(float * data, int size, boo
 
 void SampleRecognizer::performMelEnergyDetection(float * data, int size, bool overThreshold) noexcept
 {
+	if (__currentPosition == numFrames)
+		overThreshold = false;
 }
 

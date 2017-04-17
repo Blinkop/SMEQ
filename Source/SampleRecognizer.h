@@ -42,7 +42,8 @@ public:
 
 	enum widnowSpecification
 	{
-		BASS_END = 1000
+		BASS_END = 1000,
+		numWidnows = 2
 	};
 
 	enum
@@ -113,6 +114,15 @@ private:
 		_currentPosition = 0;
 	}
 
+	void __resetInfo() noexcept
+	{
+		for (int i = 0; i < numFrames; i++)
+			for (int j = 0; i < numWidnows; j++)
+				__melTotalInfo[i][j] = -1;
+
+		__currentPosition = 0;
+	}
+
 	inline void harmonyReload() noexcept
 	{
 		zeromem(threeMaxHarmonies, numHarmonies * sizeof(int));
@@ -142,8 +152,14 @@ private:
 	/*-------------------3 harmony recognition--------------------*/
 	/*------------------------------------------------------------*/
 	int _melTotalInfo[numFrames][numHarmonies];
-	int threeMaxHarmonies[3];
+	int threeMaxHarmonies[numHarmonies];
 	int _currentPosition;
+	/*------------------------------------------------------------*/
+	/*-------------------Mel window energy recognition------------*/
+	/*------------------------------------------------------------*/
+	int __melTotalInfo[numFrames][numWidnows];
+	int __currentPosition;
+
 	sampleType currentSampleType;
 	sampleType lastSampleType;
 

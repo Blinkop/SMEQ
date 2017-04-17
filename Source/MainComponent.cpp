@@ -40,7 +40,7 @@ public:
 		  switchModeButton("Switch mode", 0.25f, Colours::greenyellow),
 		  pauseButton("Pause"),
 		  speedSlider(Slider::SliderStyle::LinearHorizontal, Slider::TextEntryBoxPosition::TextBoxBelow),
-		  threshold(0.1f),
+		  threshold(0.001f),
 		  recognizer(SampleRecognizer::getRecognizer())
     {
 		setSize(800, 600);
